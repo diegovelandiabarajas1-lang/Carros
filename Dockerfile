@@ -11,4 +11,4 @@ COPY servidor/ /app/
 
 RUN chmod +x /app/*.x86_64
 
-CMD ["/bin/sh", "-c", "exec /app/*.x86_64 --headless"]
+CMD ["/bin/sh", "-c", "exec /app/*.x86_64 --headless --server"]
