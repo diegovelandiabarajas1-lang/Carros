@@ -1,0 +1,214 @@
+[gd_scene format=3 uid="uid://co4v6rmqjys8q"]
+
+[ext_resource type="Script" uid="uid://byrhy3545ggyj" path="res://scripts/menu/Lobby.cs" id="1_lobby"]
+[ext_resource type="PackedScene" uid="uid://ctg5jivyqm1ck" path="res://modelos/vortice.glb" id="2_vortice"]
+[ext_resource type="PackedScene" uid="uid://b7ieo40wya265" path="res://modelos/dominus.glb" id="3_dominus"]
+[ext_resource type="PackedScene" uid="uid://cns36smsl31rx" path="res://modelos/stormblade.glb" id="4_storm"]
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_mat"]
+sky_top_color = Color(0.35, 0.5, 0.75, 1)
+sky_horizon_color = Color(0.7, 0.78, 0.85, 1)
+ground_bottom_color = Color(0.5, 0.6, 0.7, 1)
+ground_horizon_color = Color(0.7, 0.78, 0.85, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("Sky_mat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 3
+ambient_light_energy = 0.7
+tonemap_mode = 2
+
+[sub_resource type="BoxMesh" id="Malla_plataforma"]
+size = Vector3(14, 0.6, 14)
+
+[sub_resource type="StandardMaterial3D" id="Mat_plataforma"]
+albedo_color = Color(0.15, 0.4, 0.85, 1)
+metallic = 0.2
+roughness = 0.5
+emission_enabled = true
+emission = Color(0.1, 0.3, 0.7, 1)
+emission_energy_multiplier = 0.5
+
+[sub_resource type="CylinderMesh" id="Cil_rueda_v"]
+top_radius = 0.32
+bottom_radius = 0.32
+height = 0.3
+radial_segments = 22
+
+[sub_resource type="StandardMaterial3D" id="Mat_rueda"]
+albedo_color = Color(0.08, 0.08, 0.09, 1)
+metallic = 0.1
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="Cil_rueda_d"]
+top_radius = 0.34
+bottom_radius = 0.34
+height = 0.3
+radial_segments = 22
+
+[node name="Lobby" type="Node3D" unique_id=14714655]
+script = ExtResource("1_lobby")
+VitrinaPath = NodePath("Vitrina")
+CarroVorticePath = NodePath("Vitrina/CarroV")
+CarroDominusPath = NodePath("Vitrina/CarroD")
+CarroStormbladePath = NodePath("Vitrina/CarroS")
+BotonJugarPath = NodePath("UI/Jugar")
+BotonVorticePath = NodePath("UI/ElegirVortice")
+BotonDominusPath = NodePath("UI/ElegirDominus")
+BotonStormbladePath = NodePath("UI/ElegirStormblade")
+BotonMultijugadorPath = NodePath("UI/Multijugador")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1022515345]
+environment = SubResource("Env")
+
+[node name="Sol" type="DirectionalLight3D" parent="." unique_id=35640752]
+transform = Transform3D(0.86, -0.35, 0.37, 0, 0.72, 0.69, -0.5, -0.6, 0.62, 0, 20, 0)
+shadow_enabled = true
+
+[node name="Plataforma" type="MeshInstance3D" parent="." unique_id=1226838093]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4, 0)
+mesh = SubResource("Malla_plataforma")
+surface_material_override/0 = SubResource("Mat_plataforma")
+
+[node name="Vitrina" type="Node3D" parent="." unique_id=1821762330]
+
+[node name="CarroV" type="Node3D" parent="Vitrina" unique_id=549660753]
+
+[node name="Carro" parent="Vitrina/CarroV" unique_id=891033102 instance=ExtResource("2_vortice")]
+
+[node name="RuedaFI" type="MeshInstance3D" parent="Vitrina/CarroV" unique_id=639198020]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0.92, 0.22, -1.45)
+mesh = SubResource("Cil_rueda_v")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaFD" type="MeshInstance3D" parent="Vitrina/CarroV" unique_id=430721366]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.92, 0.22, -1.45)
+mesh = SubResource("Cil_rueda_v")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaTI" type="MeshInstance3D" parent="Vitrina/CarroV" unique_id=1097853727]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0.92, 0.22, 1.6)
+mesh = SubResource("Cil_rueda_v")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaTD" type="MeshInstance3D" parent="Vitrina/CarroV" unique_id=1429047583]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.92, 0.22, 1.6)
+mesh = SubResource("Cil_rueda_v")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="CarroD" type="Node3D" parent="Vitrina" unique_id=2039517289]
+visible = false
+
+[node name="Carro" parent="Vitrina/CarroD" unique_id=1243344109 instance=ExtResource("3_dominus")]
+
+[node name="RuedaFI" type="MeshInstance3D" parent="Vitrina/CarroD" unique_id=1682233469]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0.9, 0.24, -1.3)
+mesh = SubResource("Cil_rueda_d")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaFD" type="MeshInstance3D" parent="Vitrina/CarroD" unique_id=1603713902]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.9, 0.24, -1.3)
+mesh = SubResource("Cil_rueda_d")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaTI" type="MeshInstance3D" parent="Vitrina/CarroD" unique_id=683672708]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0.9, 0.24, 1.7)
+mesh = SubResource("Cil_rueda_d")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaTD" type="MeshInstance3D" parent="Vitrina/CarroD" unique_id=1128016187]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.9, 0.24, 1.7)
+mesh = SubResource("Cil_rueda_d")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="CarroS" type="Node3D" parent="Vitrina" unique_id=637196012]
+visible = false
+
+[node name="Carro" parent="Vitrina/CarroS" unique_id=1142003020 instance=ExtResource("4_storm")]
+
+[node name="RuedaFI" type="MeshInstance3D" parent="Vitrina/CarroS" unique_id=307131345]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0.95, 0.26, -1.13)
+mesh = SubResource("Cil_rueda_d")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaFD" type="MeshInstance3D" parent="Vitrina/CarroS" unique_id=122934125]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.95, 0.26, -1.13)
+mesh = SubResource("Cil_rueda_d")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaTI" type="MeshInstance3D" parent="Vitrina/CarroS" unique_id=1717866195]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0.95, 0.26, 1.31)
+mesh = SubResource("Cil_rueda_d")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaTD" type="MeshInstance3D" parent="Vitrina/CarroS" unique_id=190685809]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.95, 0.26, 1.31)
+mesh = SubResource("Cil_rueda_d")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="Camara" type="Camera3D" parent="." unique_id=1700265101]
+transform = Transform3D(1, 0, 0, 0, 0.9919, -0.1271, 0, 0.1271, 0.9919, 0, 1.6, 7)
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=2106820538]
+
+[node name="ElegirVortice" type="Button" parent="UI" unique_id=998563793]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -345.0
+offset_top = 24.0
+offset_right = -185.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 20
+text = "Vortice"
+
+[node name="ElegirDominus" type="Button" parent="UI" unique_id=781394647]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -80.0
+offset_top = 24.0
+offset_right = 80.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 20
+text = "Dominus"
+
+[node name="ElegirStormblade" type="Button" parent="UI" unique_id=86236688]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 185.0
+offset_top = 24.0
+offset_right = 345.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 20
+text = "Stormblade"
+
+[node name="Jugar" type="Button" parent="UI" unique_id=1973669286]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -170.0
+offset_top = 150.0
+offset_right = 170.0
+offset_bottom = 255.0
+theme_override_font_sizes/font_size = 44
+text = "¡¡Jugar!!"
+
+[node name="Multijugador" type="Button" parent="UI" unique_id=367036156]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -170.0
+offset_top = 270.0
+offset_right = 170.0
+offset_bottom = 322.0
+theme_override_font_sizes/font_size = 24
+text = "Multijugador (beta)"

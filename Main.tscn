@@ -1,0 +1,412 @@
+[gd_scene format=3 uid="uid://dyu3b3nxa8qbg"]
+
+[ext_resource type="Script" uid="uid://1pfbif2qtmog" path="res://scripts/nucleo/Juego.cs" id="1_juego"]
+[ext_resource type="Script" uid="uid://m8jru2wo0feo" path="res://scripts/carro/CamaraChase.cs" id="2_cam"]
+[ext_resource type="PackedScene" uid="uid://v72an8bconea" path="res://Checkpoint.tscn" id="3_cp"]
+[ext_resource type="PackedScene" uid="uid://0y4qnpshheto" path="res://Carro.tscn" id="4_vortice"]
+[ext_resource type="PackedScene" uid="uid://cgbd1uadt43eb" path="res://Dominus.tscn" id="5_dominus"]
+[ext_resource type="Shader" uid="uid://xql60tpk3ck2" path="res://mundo/piso.gdshader" id="6_shader"]
+[ext_resource type="Script" uid="uid://dlo3hx0s4c5jc" path="res://scripts/menu/Pausa.cs" id="7_pausa"]
+[ext_resource type="PackedScene" uid="uid://bs1mm2dpwxnda" path="res://Stormblade.tscn" id="8_storm"]
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_mat"]
+sky_horizon_color = Color(0.6, 0.65, 0.7, 1)
+ground_bottom_color = Color(0.2, 0.22, 0.25, 1)
+ground_horizon_color = Color(0.6, 0.65, 0.7, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("Sky_mat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+tonemap_mode = 2
+
+[sub_resource type="PlaneMesh" id="Plano"]
+size = Vector2(500, 500)
+
+[sub_resource type="ShaderMaterial" id="Mat_piso"]
+render_priority = 0
+shader = ExtResource("6_shader")
+shader_parameter/color_base = Color(0.16, 0.18, 0.21, 1)
+shader_parameter/color_linea = Color(0.3, 0.45, 0.65, 1)
+shader_parameter/color_linea_mayor = Color(0.45, 0.7, 0.95, 1)
+shader_parameter/tam_celda = 4.0
+
+[sub_resource type="WorldBoundaryShape3D" id="Piso_forma"]
+
+[sub_resource type="BoxMesh" id="Malla_linea"]
+size = Vector3(9, 0.05, 1.6)
+
+[sub_resource type="StandardMaterial3D" id="Mat_linea"]
+albedo_color = Color(0.95, 0.95, 0.95, 1)
+emission_enabled = true
+emission = Color(0.9, 0.9, 0.9, 1)
+emission_energy_multiplier = 0.6
+
+[sub_resource type="BoxMesh" id="Malla_pilar"]
+size = Vector3(1.2, 20, 1.2)
+
+[sub_resource type="StandardMaterial3D" id="Mat_pilar"]
+albedo_color = Color(0.4, 0.43, 0.48, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="Malla_rampa"]
+size = Vector3(5, 0.5, 5)
+
+[sub_resource type="StandardMaterial3D" id="Mat_rampa"]
+albedo_color = Color(0.9, 0.75, 0.2, 1)
+roughness = 0.7
+
+[sub_resource type="BoxShape3D" id="Forma_rampa"]
+size = Vector3(5, 0.5, 5)
+
+[sub_resource type="CylinderMesh" id="Malla_cono"]
+top_radius = 0.05
+bottom_radius = 0.42
+height = 1.0
+radial_segments = 16
+
+[sub_resource type="StandardMaterial3D" id="Mat_cono"]
+albedo_color = Color(0.95, 0.45, 0.1, 1)
+emission_enabled = true
+emission = Color(0.9, 0.35, 0.05, 1)
+emission_energy_multiplier = 0.4
+
+[sub_resource type="CylinderShape3D" id="Forma_cono"]
+height = 1.0
+radius = 0.4
+
+[node name="Main" type="Node3D" unique_id=157889722]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=838511045]
+environment = SubResource("Env")
+
+[node name="Sol" type="DirectionalLight3D" parent="." unique_id=456311497]
+transform = Transform3D(0.86, -0.35, 0.37, 0, 0.72, 0.69, -0.5, -0.6, 0.62, 0, 30, 0)
+shadow_enabled = true
+
+[node name="Piso" type="StaticBody3D" parent="." unique_id=1889552192]
+
+[node name="MallaPiso" type="MeshInstance3D" parent="Piso" unique_id=1620609151]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.03354788, 0.14641118, 0.01149416)
+mesh = SubResource("Plano")
+surface_material_override/0 = SubResource("Mat_piso")
+
+[node name="ColisionPiso" type="CollisionShape3D" parent="Piso" unique_id=1461928941]
+shape = SubResource("Piso_forma")
+
+[node name="LineaMeta" type="MeshInstance3D" parent="." unique_id=1937093420]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+mesh = SubResource("Malla_linea")
+surface_material_override/0 = SubResource("Mat_linea")
+
+[node name="Inicio" type="Marker3D" parent="." unique_id=903286867]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -6, 1.2, 0)
+
+[node name="Pista" type="Node3D" parent="." unique_id=2111891365]
+
+[node name="Cp0" parent="Pista" unique_id=273547538 instance=ExtResource("3_cp")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 0)
+
+[node name="Cp1" parent="Pista" unique_id=733086996 instance=ExtResource("3_cp")]
+transform = Transform3D(-0.5812, 0, -0.8137, 0, 1, 0, 0.8137, 0, -0.5812, 24.7487, 0, -7.3223)
+Indice = 1
+
+[node name="Cp2" parent="Pista" unique_id=1323383965 instance=ExtResource("3_cp")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 35, 0, -25)
+Indice = 2
+
+[node name="Cp3" parent="Pista" unique_id=905242305 instance=ExtResource("3_cp")]
+transform = Transform3D(-0.5812, 0, 0.8137, 0, 1, 0, -0.8137, 0, -0.5812, 24.7487, 0, -42.6777)
+Indice = 3
+
+[node name="Cp4" parent="Pista" unique_id=1949328155 instance=ExtResource("3_cp")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, -50)
+Indice = 4
+
+[node name="Cp5" parent="Pista" unique_id=249588668 instance=ExtResource("3_cp")]
+transform = Transform3D(0.5812, 0, 0.8137, 0, 1, 0, -0.8137, 0, 0.5812, -24.7487, 0, -42.6777)
+Indice = 5
+
+[node name="Cp6" parent="Pista" unique_id=1518266117 instance=ExtResource("3_cp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 0, -25)
+Indice = 6
+
+[node name="Cp7" parent="Pista" unique_id=757032951 instance=ExtResource("3_cp")]
+transform = Transform3D(0.5812, 0, -0.8137, 0, 1, 0, 0.8137, 0, 0.5812, -24.7487, 0, -7.3223)
+Indice = 7
+
+[node name="Pilares" type="Node3D" parent="." unique_id=638692524]
+
+[node name="P0" type="MeshInstance3D" parent="Pilares" unique_id=1131759876]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.8, 10, 11.5)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="P1" type="MeshInstance3D" parent="Pilares" unique_id=1315681660]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.7, 10, 0.4)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="P2" type="MeshInstance3D" parent="Pilares" unique_id=1138731681]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 10, -25)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="P3" type="MeshInstance3D" parent="Pilares" unique_id=29292078]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38.8, 10, -47.6)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="P4" type="MeshInstance3D" parent="Pilares" unique_id=1301084720]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.7, 10, -66.1)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="P5" type="MeshInstance3D" parent="Pilares" unique_id=1896567610]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.5, 10, -70.7)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="P6" type="MeshInstance3D" parent="Pilares" unique_id=419938207]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -38.8, 10, -47.6)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="P7" type="MeshInstance3D" parent="Pilares" unique_id=900390506]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54, 10, -25)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="P8" type="MeshInstance3D" parent="Pilares" unique_id=844167394]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.5, 10, 3.2)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="P9" type="MeshInstance3D" parent="Pilares" unique_id=56401157]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.8, 10, 11.5)
+mesh = SubResource("Malla_pilar")
+surface_material_override/0 = SubResource("Mat_pilar")
+
+[node name="Camara" type="Camera3D" parent="." unique_id=1491644681]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -8, 4, 0)
+script = ExtResource("2_cam")
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1348639157]
+
+[node name="Info" type="Label" parent="HUD" unique_id=1993437344]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 320.0
+offset_bottom = 110.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 24
+text = "Vortice"
+
+[node name="Progreso" type="Label" parent="HUD" unique_id=1277968324]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = 90.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 24
+text = "Vuelta 0"
+horizontal_alignment = 2
+
+[node name="Ayuda" type="Label" parent="HUD" unique_id=1807265054]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -80.0
+offset_right = 720.0
+offset_bottom = -16.0
+theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+text = "W/S acelera-reversa   A/D gira   Espacio salta (2x doble salto)   Ctrl derrapa   Shift turbo   Tab cambia carro   R reinicia   Esc pausa"
+
+[node name="Turbo" type="ProgressBar" parent="HUD" unique_id=1810536145]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -110.0
+offset_right = 150.0
+offset_bottom = -86.0
+value = 100.0
+show_percentage = false
+
+[node name="EtiquetaTurbo" type="Label" parent="HUD" unique_id=1446433126]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -134.0
+offset_right = 150.0
+offset_bottom = -110.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 16
+text = "TURBO"
+horizontal_alignment = 1
+
+[node name="Obstaculos" type="Node3D" parent="." unique_id=648142138]
+
+[node name="Rampa1" type="StaticBody3D" parent="Obstaculos" unique_id=189831201]
+transform = Transform3D(0.966, 0.259, 0, -0.259, 0.966, 0, 0, 0, 1, 12, 0.5, 4)
+
+[node name="MallaRampa1" type="MeshInstance3D" parent="Obstaculos/Rampa1" unique_id=922696939]
+mesh = SubResource("Malla_rampa")
+surface_material_override/0 = SubResource("Mat_rampa")
+
+[node name="ColRampa1" type="CollisionShape3D" parent="Obstaculos/Rampa1" unique_id=674955058]
+shape = SubResource("Forma_rampa")
+
+[node name="Rampa2" type="StaticBody3D" parent="Obstaculos" unique_id=191133231]
+transform = Transform3D(1, 0, 0, 0, 0.966, 0.259, 0, -0.259, 0.966, -8, 0.5, -18)
+
+[node name="MallaRampa2" type="MeshInstance3D" parent="Obstaculos/Rampa2" unique_id=1581848527]
+mesh = SubResource("Malla_rampa")
+surface_material_override/0 = SubResource("Mat_rampa")
+
+[node name="ColRampa2" type="CollisionShape3D" parent="Obstaculos/Rampa2" unique_id=871158140]
+shape = SubResource("Forma_rampa")
+
+[node name="Cono1" type="RigidBody3D" parent="Obstaculos" unique_id=696682452]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0.6, -10)
+mass = 3.0
+
+[node name="MallaCono1" type="MeshInstance3D" parent="Obstaculos/Cono1" unique_id=1339664333]
+mesh = SubResource("Malla_cono")
+surface_material_override/0 = SubResource("Mat_cono")
+
+[node name="ColCono1" type="CollisionShape3D" parent="Obstaculos/Cono1" unique_id=2130051132]
+shape = SubResource("Forma_cono")
+
+[node name="Cono2" type="RigidBody3D" parent="Obstaculos" unique_id=320421937]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0.6, -25)
+mass = 3.0
+
+[node name="MallaCono2" type="MeshInstance3D" parent="Obstaculos/Cono2" unique_id=587132792]
+mesh = SubResource("Malla_cono")
+surface_material_override/0 = SubResource("Mat_cono")
+
+[node name="ColCono2" type="CollisionShape3D" parent="Obstaculos/Cono2" unique_id=1186736328]
+shape = SubResource("Forma_cono")
+
+[node name="Cono3" type="RigidBody3D" parent="Obstaculos" unique_id=1972695984]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.6, -35)
+mass = 3.0
+
+[node name="MallaCono3" type="MeshInstance3D" parent="Obstaculos/Cono3" unique_id=1261290398]
+mesh = SubResource("Malla_cono")
+surface_material_override/0 = SubResource("Mat_cono")
+
+[node name="ColCono3" type="CollisionShape3D" parent="Obstaculos/Cono3" unique_id=54764537]
+shape = SubResource("Forma_cono")
+
+[node name="Cono4" type="RigidBody3D" parent="Obstaculos" unique_id=1800630900]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 0.6, -15)
+mass = 3.0
+
+[node name="MallaCono4" type="MeshInstance3D" parent="Obstaculos/Cono4" unique_id=675873104]
+mesh = SubResource("Malla_cono")
+surface_material_override/0 = SubResource("Mat_cono")
+
+[node name="ColCono4" type="CollisionShape3D" parent="Obstaculos/Cono4" unique_id=2018953980]
+shape = SubResource("Forma_cono")
+
+[node name="Cono5" type="RigidBody3D" parent="Obstaculos" unique_id=1172895081]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0.6, -45)
+mass = 3.0
+
+[node name="MallaCono5" type="MeshInstance3D" parent="Obstaculos/Cono5" unique_id=1128880995]
+mesh = SubResource("Malla_cono")
+surface_material_override/0 = SubResource("Mat_cono")
+
+[node name="ColCono5" type="CollisionShape3D" parent="Obstaculos/Cono5" unique_id=1157222444]
+shape = SubResource("Forma_cono")
+
+[node name="Pausa" type="CanvasLayer" parent="." unique_id=830052882]
+script = ExtResource("7_pausa")
+PanelPath = NodePath("Panel")
+BotonContinuarPath = NodePath("Panel/Caja/Continuar")
+BotonReiniciarPath = NodePath("Panel/Caja/Reiniciar")
+BotonLobbyPath = NodePath("Panel/Caja/Lobby")
+
+[node name="Panel" type="Panel" parent="Pausa" unique_id=1114032526]
+self_modulate = Color(0, 0, 0, 0.55)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Caja" type="VBoxContainer" parent="Pausa/Panel" unique_id=428908509]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -120.0
+offset_right = 140.0
+offset_bottom = 120.0
+theme_override_constants/separation = 16
+
+[node name="Titulo" type="Label" parent="Pausa/Panel/Caja" unique_id=460473246]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "PAUSA"
+horizontal_alignment = 1
+
+[node name="Continuar" type="Button" parent="Pausa/Panel/Caja" unique_id=756228026]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Continuar"
+
+[node name="Reiniciar" type="Button" parent="Pausa/Panel/Caja" unique_id=44915530]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Reiniciar"
+
+[node name="Lobby" type="Button" parent="Pausa/Panel/Caja" unique_id=921645509]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Volver al lobby"
+
+[node name="Jugadores" type="Node3D" parent="." unique_id=233946464]
+
+[node name="Spawner" type="MultiplayerSpawner" parent="." unique_id=1119502125]
+spawn_path = NodePath("../Jugadores")
+
+[node name="Juego" type="Node3D" parent="." unique_id=641085843]
+script = ExtResource("1_juego")
+CarroVortice = ExtResource("4_vortice")
+CarroDominus = ExtResource("5_dominus")
+CarroStormblade = ExtResource("8_storm")
+PuntoInicioPath = NodePath("../Inicio")
+CamaraPath = NodePath("../Camara")
+LabelInfoPath = NodePath("../HUD/Info")
+LabelProgresoPath = NodePath("../HUD/Progreso")
+BarraTurboPath = NodePath("../HUD/Turbo")
+SpawnerPath = NodePath("../Spawner")
+JugadoresPath = NodePath("../Jugadores")

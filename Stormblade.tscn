@@ -1,0 +1,103 @@
+[gd_scene format=3 uid="uid://bs1mm2dpwxnda"]
+
+[ext_resource type="Script" uid="uid://b02jlinv2gilm" path="res://scripts/carro/Carro.cs" id="1_carro"]
+[ext_resource type="PackedScene" uid="uid://cns36smsl31rx" path="res://modelos/stormblade.glb" id="2_malla"]
+
+[sub_resource type="BoxShape3D" id="Box_chasis"]
+size = Vector3(1.9, 0.8, 3.6)
+
+[sub_resource type="StandardMaterial3D" id="Mat_rueda"]
+albedo_color = Color(0.08, 0.08, 0.09, 1)
+metallic = 0.1
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="Cil_rueda"]
+top_radius = 0.36
+bottom_radius = 0.36
+height = 0.32
+radial_segments = 22
+
+[node name="Stormblade" type="VehicleBody3D"]
+mass = 650.0
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, -0.1, 0.05)
+script = ExtResource("1_carro")
+
+[node name="Malla" parent="." instance=ExtResource("2_malla")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.12, 0)
+
+[node name="Colision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Box_chasis")
+
+[node name="RuedaDelanteraIzq" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.95, 0.24, -1.13)
+use_as_traction = false
+use_as_steering = true
+wheel_radius = 0.36
+wheel_rest_length = 0.18
+wheel_friction_slip = 3.5
+suspension_travel = 0.28
+suspension_stiffness = 30.0
+suspension_max_force = 8000.0
+damping_compression = 2.0
+damping_relaxation = 2.5
+
+[node name="Rueda" type="MeshInstance3D" parent="RuedaDelanteraIzq"]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Cil_rueda")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaDelanteraDer" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.95, 0.24, -1.13)
+use_as_traction = false
+use_as_steering = true
+wheel_radius = 0.36
+wheel_rest_length = 0.18
+wheel_friction_slip = 3.5
+suspension_travel = 0.28
+suspension_stiffness = 30.0
+suspension_max_force = 8000.0
+damping_compression = 2.0
+damping_relaxation = 2.5
+
+[node name="Rueda" type="MeshInstance3D" parent="RuedaDelanteraDer"]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Cil_rueda")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaTraseraIzq" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.95, 0.24, 1.31)
+use_as_traction = true
+use_as_steering = false
+wheel_radius = 0.36
+wheel_rest_length = 0.18
+wheel_friction_slip = 3.5
+suspension_travel = 0.28
+suspension_stiffness = 30.0
+suspension_max_force = 8000.0
+damping_compression = 2.0
+damping_relaxation = 2.5
+
+[node name="Rueda" type="MeshInstance3D" parent="RuedaTraseraIzq"]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Cil_rueda")
+surface_material_override/0 = SubResource("Mat_rueda")
+
+[node name="RuedaTraseraDer" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.95, 0.24, 1.31)
+use_as_traction = true
+use_as_steering = false
+wheel_radius = 0.36
+wheel_rest_length = 0.18
+wheel_friction_slip = 3.5
+suspension_travel = 0.28
+suspension_stiffness = 30.0
+suspension_max_force = 8000.0
+damping_compression = 2.0
+damping_relaxation = 2.5
+
+[node name="Rueda" type="MeshInstance3D" parent="RuedaTraseraDer"]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Cil_rueda")
+surface_material_override/0 = SubResource("Mat_rueda")

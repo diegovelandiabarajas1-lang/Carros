@@ -1,0 +1,9 @@
+# Configuracion opcional para Render (Blueprint). Con esto, Render arma el servicio solo.
+# Tambien puedes crear el servicio a mano en el panel de Render (ver DESPLIEGUE.md).
+services:
+  - type: web
+    name: derby-servidor
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .

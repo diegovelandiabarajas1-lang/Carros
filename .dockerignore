@@ -1,0 +1,6 @@
+# El contenedor SOLO necesita la carpeta 'servidor' (el servidor ya exportado) y el Dockerfile.
+# Ignoramos el resto del proyecto de Godot para que la construccion en Render sea rapida.
+*
+!servidor
+!servidor/**
+!Dockerfile

@@ -1,0 +1,112 @@
+[gd_scene format=3 uid="uid://credmenu00001"]
+
+[ext_resource type="Script" uid="uid://cjod76vwfqe6l" path="res://scripts/red/RedMenu.cs" id="1_red"]
+
+[node name="RedMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_red")
+CampoDireccionPath = NodePath("Caja/Direccion")
+EstadoPath = NodePath("Caja/Estado")
+BotonHostearPath = NodePath("Caja/Hostear")
+BotonUnirsePath = NodePath("Caja/Unirse")
+BotonVolverPath = NodePath("Caja/Volver")
+CajaHostPath = NodePath("Caja/CajaHost")
+BotonArenaPath = NodePath("Caja/CajaHost/MapaArena")
+BotonPistaPath = NodePath("Caja/CajaHost/MapaPista")
+BotonEmpezarPath = NodePath("Caja/CajaHost/Empezar")
+EtiquetaMapaPath = NodePath("Caja/CajaHost/EtiquetaMapa")
+
+[node name="Fondo" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.12, 0.18, 1)
+
+[node name="Caja" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -280.0
+offset_right = 250.0
+offset_bottom = 280.0
+theme_override_constants/separation = 14
+
+[node name="Titulo" type="Label" parent="Caja"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+horizontal_alignment = 1
+text = "Multijugador"
+
+[node name="Ayuda" type="Label" parent="Caja"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+autowrap_mode = 2
+text = "El HOST crea la partida, elige mapa y da Empezar. Los demas escriben la direccion y se unen. Prueba local: abre el juego dos veces, uno Hostea y el otro se une con 127.0.0.1."
+
+[node name="Hostear" type="Button" parent="Caja"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+theme_override_font_sizes/font_size = 24
+text = "Hostear (crear partida)"
+
+[node name="Direccion" type="LineEdit" parent="Caja"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+theme_override_font_sizes/font_size = 20
+placeholder_text = "IP o wss:// del host"
+text = "127.0.0.1"
+
+[node name="Unirse" type="Button" parent="Caja"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+theme_override_font_sizes/font_size = 24
+text = "Unirse a la partida"
+
+[node name="Estado" type="Label" parent="Caja"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+horizontal_alignment = 1
+autowrap_mode = 2
+text = "Sin conexion."
+
+[node name="CajaHost" type="VBoxContainer" parent="Caja"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EtiquetaMapa" type="Label" parent="Caja/CajaHost"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "Mapa: Arena"
+
+[node name="MapaArena" type="Button" parent="Caja/CajaHost"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+theme_override_font_sizes/font_size = 20
+text = "Mapa: Arena"
+
+[node name="MapaPista" type="Button" parent="Caja/CajaHost"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+theme_override_font_sizes/font_size = 20
+text = "Mapa: Pista"
+
+[node name="Empezar" type="Button" parent="Caja/CajaHost"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 56)
+theme_override_font_sizes/font_size = 28
+text = "¡Empezar!"
+
+[node name="Volver" type="Button" parent="Caja"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+theme_override_font_sizes/font_size = 18
+text = "Volver"
