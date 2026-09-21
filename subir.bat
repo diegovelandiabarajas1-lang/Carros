@@ -1,35 +1,32 @@
 @echo off
-echo ========================================
-echo   Subiendo el proyecto del juego a GitHub
-echo ========================================
+echo ==========================================
+echo   Subir proyecto a GitHub (intento 2)
+echo ==========================================
 echo.
 
 cd /d "D:\Carros\nuevo-proyecto-de-juego"
 
-echo [1/6] Inicializando git...
-git init
-git branch -M main
+echo [1] Activando la sesion guardada de GitHub...
+git config --global credential.helper manager
 
-echo [2/6] Configurando identidad de git...
-git config user.email "diego.velandia.barajas1@gmail.com"
-git config user.name "diegovelandiabarajas1-lang"
-
-echo [3/6] Conectando con tu repositorio de GitHub...
+echo [2] Conectando con tu repositorio...
 git remote remove origin 2>nul
 git remote add origin https://github.com/diegovelandiabarajas1-lang/Carros.git
 
-echo [4/6] Agregando todos los archivos (puede tardar un poco)...
+echo [3] Preparando los archivos...
 git add -A
+git commit -m "Subir proyecto del juego con servidor" 2>nul
 
-echo [5/6] Creando el commit...
-git commit -m "Subir proyecto del juego con servidor"
-
-echo [6/6] Subiendo a GitHub (el servidor pesa 73 MB, ten paciencia)...
+echo.
+echo [4] Subiendo a GitHub...
+echo     * Si se abre el NAVEGADOR pidiendo autorizar, dale AUTORIZAR / CONTINUE.
+echo     * El servidor pesa 73 MB, puede tardar varios minutos. Ten paciencia.
+echo.
 git push -u origin main --force
 
 echo.
-echo ========================================
-echo   Termino. Mira arriba si aparece algun error.
-echo   Si dice "Writing objects: 100%%" y luego "main -^> main", quedo bien.
-echo ========================================
+echo ==========================================
+echo   Termino. Mira arriba si dice "main -^> main" (=quedo bien)
+echo   o si volvio a pedir usuario/contrasena (avisame).
+echo ==========================================
 pause
