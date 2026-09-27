@@ -12,10 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copiamos el servidor exportado (binario + carpeta data_Vortice_linux_x86_64 + .pck).
+# Servidor exportado (binario + .pck + carpeta data_Vortice_linuxbsd_x86_64).
 COPY servidor/ /app/
 
-RUN chmod +x /app/juego.x86_64
+# El ejecutable se llama Carro.x86_64 (el glob evita romperse si cambia el nombre).
+RUN chmod +x /app/*.x86_64
 
-# El modo "servidor dedicado" arranca solo como servidor y lee el puerto (PORT) que da Render.
-CMD ["/app/juego.x86_64", "--headless"]
+# Arranca como servidor dedicado headless; lee el PORT que da Render.
+CMD ["/app/Carro.x86_64", "--headless", "--server"]
