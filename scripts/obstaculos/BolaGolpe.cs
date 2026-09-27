@@ -8,12 +8,18 @@ public partial class BolaGolpe : RigidBody3D
 
     private bool _servidor = true;
     private bool _enRed = false;
+    private float _acum = 0f;
+    private Vector3 _objPos;
+    private Vector3 _objRot;
 
     public override void _Ready()
     {
         ContactMonitor = true;
         MaxContactsReported = 8;
         BodyEntered += AlChocar;
+
+        _objPos = GlobalPosition;
+        _objRot = Rotation;
 
         _enRed = Multiplayer.HasMultiplayerPeer();
         _servidor = !_enRed || Multiplayer.IsServer();
@@ -27,16 +33,32 @@ public partial class BolaGolpe : RigidBody3D
 
     public override void _PhysicsProcess(double delta)
     {
-        // El servidor le manda la posicion de la bola a todos los clientes.
-        if (_enRed && _servidor && Multiplayer.GetPeers().Length > 0)
-            Rpc(MethodName.SincBola, GlobalPosition, Rotation);
+        if (_servidor)
+        {
+            // El servidor manda la posicion ~20 veces por segundo (no 60) para no congestionar.
+            if (_enRed && Multiplayer.GetPeers().Length > 0)
+            {
+                _acum += (float)delta;
+                if (_acum >= 0.05f)
+                {
+                    _acum = 0f;
+                    Rpc(MethodName.SincBola, GlobalPosition, Rotation);
+                }
+            }
+        }
+        else
+        {
+            // Cliente: suaviza hacia la ultima posicion recibida (se ve fluido aunque lleguen pocas).
+            GlobalPosition = GlobalPosition.Lerp(_objPos, 1f - Mathf.Exp(-18f * (float)delta));
+            Rotation = Rotation.Lerp(_objRot, 1f - Mathf.Exp(-12f * (float)delta));
+        }
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
     private void SincBola(Vector3 pos, Vector3 rot)
     {
-        GlobalPosition = pos;
-        Rotation = rot;
+        _objPos = pos;
+        _objRot = rot;
     }
 
     private void AlChocar(Node cuerpo)

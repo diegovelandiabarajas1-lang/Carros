@@ -29,6 +29,17 @@ public partial class Carro : VehicleBody3D
     [Export] public float AgacheProfundidad = 0.15f;
     [Export] public float AgacheDuracion = 0.06f;
 
+    // --- Combate: vida y demolicion ---
+    [Export] public float VidaMax = 100f;
+    [Export] public float UmbralDemolicion = 8f;   // velocidad minima (m/s) para hacer dano
+    [Export] public float FactorDano = 3.2f;        // dano por cada m/s por encima del umbral
+    [Export] public float TiempoReaparecer = 3.0f;
+
+    public float Vida { get; private set; } = 100f;
+    public bool Muerto => _muerto;
+    private bool _muerto = false;
+    private Vector3 _puntoReaparecer = Vector3.Zero;
+
     public float Boost { get; private set; } = 1f;
     public bool UsandoTurbo { get; private set; } = false;
 
@@ -78,6 +89,13 @@ public partial class Carro : VehicleBody3D
 
         _malla = GetNodeOrNull<Node3D>("Malla");
         if (_malla != null) _mallaBase = _malla.Position;
+
+        // Combate: vida inicial, punto donde reaparece, y deteccion de choques.
+        Vida = VidaMax;
+        _puntoReaparecer = GlobalPosition;
+        ContactMonitor = true;
+        MaxContactsReported = 8;
+        BodyEntered += AlChocar;
 
         _motor = new AudioStreamPlayer();
         AddChild(_motor);
@@ -132,6 +150,15 @@ public partial class Carro : VehicleBody3D
         VelRed = LinearVelocity;
         _posAnterior = GlobalPosition;
         _posInicializada = true;
+
+        // Si estoy destruido, no me dejo controlar hasta reaparecer.
+        if (_muerto)
+        {
+            EngineForce = 0f;
+            Steering = 0f;
+            Brake = FrenoFuerza;
+            return;
+        }
 
         float acelerar = Input.GetActionStrength("acelerar") - Input.GetActionStrength("retroceder");
         float dir = Input.GetActionStrength("izquierda") - Input.GetActionStrength("derecha");
@@ -285,5 +312,135 @@ public partial class Carro : VehicleBody3D
 
         _energia -= tor.Length() * d;
         if (_energia <= 0f) _girando = false;
+    }
+
+    // ================= COMBATE: vida y demolicion =================
+
+    // Cuando MI carro choca contra otro carro yendo rapido, le reporto el golpe al servidor.
+    private void AlChocar(Node cuerpo)
+    {
+        if (!_controlo || _muerto) return;       // solo el dueno de este carro reporta
+        if (cuerpo is not Carro otro) return;    // solo contra otros carros
+        if (otro == this) return;
+
+        float miVel = VelRed.Length();
+        if (miVel < UmbralDemolicion) return;
+
+        float dano = (miVel - UmbralDemolicion) * FactorDano;
+        if (dano <= 0f) return;
+
+        int idAtacante = GetMultiplayerAuthority();
+        if (_enRed)
+            otro.RpcId(1, Carro.MethodName.RecibirDano, dano, idAtacante);
+        else
+            otro.AplicarDano(dano, idAtacante);
+    }
+
+    // Llega al servidor: el servidor decide el dano de verdad.
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer)]
+    private void RecibirDano(float dano, int idAtacante)
+    {
+        if (_enRed && !Multiplayer.IsServer()) return;
+        AplicarDano(dano, idAtacante);
+    }
+
+    private void AplicarDano(float dano, int idAtacante)
+    {
+        if (_muerto) return;
+        Vida = Mathf.Max(0f, Vida - dano);
+
+        // avisarle su nueva vida al dueno (para la barra del HUD)
+        int dueno = GetMultiplayerAuthority();
+        if (_enRed && dueno != 1)
+            RpcId(dueno, MethodName.ActualizarVida, Vida);
+        else
+            ActualizarVida(Vida);
+
+        if (Vida <= 0f)
+        {
+            _muerto = true;
+            if (_enRed)
+                Rpc(MethodName.Demoler, idAtacante);
+            else
+                Demoler(idAtacante);
+
+            GetTree().CreateTimer(TiempoReaparecer).Timeout += Revivir_Servidor;
+        }
+    }
+
+    private void Revivir_Servidor()
+    {
+        Vida = VidaMax;
+        _muerto = false;
+        Vector3 pos = _puntoReaparecer + new Vector3(
+            (float)GD.RandRange(-3.0, 3.0), 0.6f, (float)GD.RandRange(-3.0, 3.0));
+        if (_enRed)
+            Rpc(MethodName.Revivir, pos, VidaMax);
+        else
+            Revivir(pos, VidaMax);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer)]
+    private void ActualizarVida(float v)
+    {
+        Vida = v;
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
+    private void Demoler(int idAtacante)
+    {
+        _muerto = true;
+        if (_malla != null) _malla.Visible = false;
+        if (_estela != null) _estela.Visible = false;
+
+        Explotar();
+
+        foreach (var n in GetTree().GetNodesInGroup("juego"))
+            if (n is Juego j) { j.AvisarDemolicion(idAtacante, GetMultiplayerAuthority()); break; }
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
+    private void Revivir(Vector3 pos, float v)
+    {
+        _muerto = false;
+        Vida = v;
+        if (_malla != null) _malla.Visible = true;
+
+        if (_controlo)
+        {
+            GlobalPosition = pos;
+            LinearVelocity = Vector3.Zero;
+            AngularVelocity = Vector3.Zero;
+        }
+    }
+
+    // Explosion de particulas cuando un carro es destruido (no se dibuja en el servidor).
+    private void Explotar()
+    {
+        if (DisplayServer.GetName() == "headless") return;
+
+        var p = new GpuParticles3D();
+        var mat = new ParticleProcessMaterial();
+        mat.Direction = new Vector3(0, 1, 0);
+        mat.Spread = 180f;
+        mat.InitialVelocityMin = 6f;
+        mat.InitialVelocityMax = 13f;
+        mat.Gravity = new Vector3(0, -9.8f, 0);
+        mat.ScaleMin = 0.3f;
+        mat.ScaleMax = 0.9f;
+        mat.Color = new Color(1f, 0.55f, 0.1f);
+        p.ProcessMaterial = mat;
+        p.DrawPass1 = new SphereMesh { Radius = 0.22f, Height = 0.44f };
+        p.Amount = 40;
+        p.Lifetime = 0.8;
+        p.OneShot = true;
+        p.Explosiveness = 0.95f;
+        p.Emitting = true;
+
+        var raiz = GetTree().CurrentScene;
+        if (raiz == null) return;
+        raiz.AddChild(p);
+        p.GlobalPosition = GlobalPosition + Vector3.Up * 0.5f;
+        GetTree().CreateTimer(2.0).Timeout += () => { if (IsInstanceValid(p)) p.QueueFree(); };
     }
 }

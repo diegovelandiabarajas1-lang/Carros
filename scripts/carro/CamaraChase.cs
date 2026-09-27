@@ -10,6 +10,14 @@ public partial class CamaraChase : Camera3D
 
     public Node3D Objetivo;
 
+    private float _sacudida = 0f;
+
+    // Llama esto para sacudir la camara (fuerza sugerida: 0.15 golpe, 0.35 demolicion).
+    public void Sacudir(float fuerza)
+    {
+        _sacudida = Mathf.Max(_sacudida, fuerza);
+    }
+
     public override void _PhysicsProcess(double delta)
     {
         if (Objetivo == null || !IsInstanceValid(Objetivo)) return;
@@ -27,5 +35,16 @@ public partial class CamaraChase : Camera3D
         Fov = Mathf.Lerp(Fov, FovBase + (FovMax - FovBase) * f, t);
 
         LookAt(Objetivo.GlobalPosition + Vector3.Up * AlturaMira, Vector3.Up);
+
+        // Temblor de camara: pequeño empujon aleatorio que se va apagando.
+        if (_sacudida > 0.001f)
+        {
+            Vector3 tmb = new Vector3(
+                (float)GD.RandRange(-1.0, 1.0),
+                (float)GD.RandRange(-1.0, 1.0),
+                (float)GD.RandRange(-1.0, 1.0)) * _sacudida;
+            GlobalPosition += tmb;
+            _sacudida = Mathf.MoveToward(_sacudida, 0f, (float)delta * 2.5f);
+        }
     }
 }

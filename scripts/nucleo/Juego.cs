@@ -14,6 +14,12 @@ public partial class Juego : Node3D
 	[Export] public NodePath SpawnerPath;
 	[Export] public NodePath JugadoresPath;
 
+	// --- Modo futbol ---
+	[Export] public bool ModoFutbol = true;
+	[Export] public float ArcoZ = 88f;                        // distancia de los arcos (arena va de -91 a 91)
+	[Export] public Vector3 ArcoTam = new Vector3(28, 8, 6);  // ancho, alto, fondo del arco
+	[Export] public Vector3 BolaInicio = new Vector3(0, 4, 0);
+
 	private PackedScene[] _carros;
 	private string[] _nombres;
 	private int _idx = 0;
@@ -24,6 +30,20 @@ public partial class Juego : Node3D
 	private Label _info, _progreso;
 	private ProgressBar _turbo;
 	private AudioStreamPlayer _sonidoCp;
+
+	// HUD de combate (se crea por codigo, no hay que tocar la escena)
+	private ProgressBar _barraVida;
+	private StyleBoxFlat _estiloVida;
+	private Label _lblMarcador;
+	private Label _lblMensaje;
+	private double _tMensaje = 0;
+	private readonly Dictionary<int, int> _destrucciones = new();
+
+	// Futbol
+	private int _golesAzul = 0, _golesRojo = 0;
+	private Label _lblGoles;
+	private Node3D _bola;
+	private double _reintento = 0;
 
 	private int _totalCp = 0;
 	private int _siguiente = 0;
@@ -84,6 +104,11 @@ public partial class Juego : Node3D
 		}
 
 		ActualizarProgreso();
+
+		// El HUD y los arcos se crean al final, cuando ya paso el saludo de red,
+		// para que un error de escena no impida recibir el carro.
+		CrearHudCombate();
+		if (ModoFutbol) { CrearArcos(); ActualizarMarcadorGoles(); }
 	}
 
 	private void AparecerCarro(int idx)
@@ -112,25 +137,20 @@ public partial class Juego : Node3D
 
 	private void RegistrarJugador(int id)
 	{
-		if (!Multiplayer.IsServer()) return;
-		if (_jugadoresRed.Contains(id)) return;
+		if (!Multiplayer.IsServer() || _jugadores == null) return;
 
-		foreach (int y in _jugadoresRed)
-			EnviarCrear(id, y);
+		_jugadoresRed.Add(id);   // HashSet: no duplica
 
-		_jugadoresRed.Add(id);
+		// (Re)crea y sincroniza TODOS los carros para TODOS. CrearCarro no duplica
+		// (revisa si ya existe), asi que repetir es seguro y arregla pedidos perdidos.
+		foreach (int a in _jugadoresRed)
+		{
+			CrearCarro(a);                       // en el servidor
+			foreach (int b in _jugadoresRed)
+				if (b != 1) RpcId(b, MethodName.CrearCarro, a);   // en cada cliente
+		}
 
-		CrearCarro(id);
-		foreach (int z in _jugadoresRed)
-			if (z != 1) EnviarCrear(z, id);
-
-		GD.Print($"[SERVIDOR] Jugador {id} registrado. Total con carro: {_jugadoresRed.Count}.");
-	}
-
-	private void EnviarCrear(int destino, int idCarro)
-	{
-		if (destino == 1) CrearCarro(idCarro);
-		else RpcId(destino, MethodName.CrearCarro, idCarro);
+		GD.Print($"[SERVIDOR] Jugador {id} registrado. Total: {_jugadoresRed.Count}.");
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
@@ -189,6 +209,15 @@ public partial class Juego : Node3D
 			{
 				var mio = _jugadores.GetNodeOrNull<Carro>(Multiplayer.GetUniqueId().ToString());
 				if (mio != null) { _carro = mio; _cam.Objetivo = mio; }
+					else if (!Multiplayer.IsServer())
+					{
+						_reintento -= delta;
+						if (_reintento <= 0)
+						{
+							_reintento = 0.5;
+							RpcId(1, MethodName.ServidorJugadorListo);
+						}
+					}
 			}
 			if (Input.IsActionJustPressed("reiniciar")) ReiniciarLocal();
 		}
@@ -210,7 +239,196 @@ public partial class Juego : Node3D
 			}
 			if (_turbo != null)
 				_turbo.Value = _carro.Boost * 100.0;
+
+			if (_barraVida != null)
+			{
+				_barraVida.Value = _carro.Vida;
+				if (_estiloVida != null)
+				{
+					float f = (float)(_carro.Vida / 100.0);
+					_estiloVida.BgColor = new Color(1f - f, 0.3f + 0.55f * f, 0.2f);
+				}
+			}
 		}
+
+		if (_lblMensaje != null && _tMensaje > 0)
+		{
+			_tMensaje -= delta;
+			Color c = _lblMensaje.Modulate;
+			c.A = (float)Mathf.Clamp(_tMensaje, 0.0, 1.0);
+			_lblMensaje.Modulate = c;
+		}
+	}
+
+	private void CrearHudCombate()
+	{
+		Node hud = _info != null ? _info.GetParent() : null;
+		if (hud == null) return;
+
+		_estiloVida = new StyleBoxFlat();
+		_estiloVida.BgColor = new Color(0.15f, 0.85f, 0.25f);
+		_estiloVida.SetCornerRadiusAll(6);
+
+		_barraVida = new ProgressBar();
+		_barraVida.ShowPercentage = false;
+		_barraVida.MinValue = 0;
+		_barraVida.MaxValue = 100;
+		_barraVida.Value = 100;
+		_barraVida.CustomMinimumSize = new Vector2(260, 26);
+		_barraVida.Position = new Vector2(20, 90);
+		_barraVida.AddThemeStyleboxOverride("fill", _estiloVida);
+		hud.AddChild(_barraVida);
+
+		_lblMarcador = new Label();
+		_lblMarcador.Position = new Vector2(20, 122);
+		_lblMarcador.Text = "Destrucciones: 0";
+		_lblMarcador.AddThemeFontSizeOverride("font_size", 20);
+		hud.AddChild(_lblMarcador);
+
+		_lblMensaje = new Label();
+		_lblMensaje.SetAnchorsPreset(Control.LayoutPreset.TopWide);
+		_lblMensaje.OffsetTop = 80;
+		_lblMensaje.OffsetBottom = 140;
+		_lblMensaje.HorizontalAlignment = HorizontalAlignment.Center;
+		_lblMensaje.VerticalAlignment = VerticalAlignment.Center;
+		_lblMensaje.AddThemeFontSizeOverride("font_size", 36);
+		_lblMensaje.Modulate = new Color(1, 1, 1, 0);
+		hud.AddChild(_lblMensaje);
+
+		// Marcador de goles arriba al centro.
+		_lblGoles = new Label();
+		_lblGoles.SetAnchorsPreset(Control.LayoutPreset.TopWide);
+		_lblGoles.OffsetTop = 8;
+		_lblGoles.OffsetBottom = 68;
+		_lblGoles.HorizontalAlignment = HorizontalAlignment.Center;
+		_lblGoles.AddThemeFontSizeOverride("font_size", 28);
+		hud.AddChild(_lblGoles);
+	}
+
+	// ================= FUTBOL: arcos, goles y marcador =================
+
+	private void CrearArcos()
+	{
+		_bola = GetParent().GetNodeOrNull<Node3D>("Obstaculos/Bola");
+		CrearUnArco("ArcoNorte", new Vector3(0, ArcoTam.Y / 2f, -ArcoZ), new Color(0.35f, 0.55f, 1f), true);
+		CrearUnArco("ArcoSur", new Vector3(0, ArcoTam.Y / 2f, ArcoZ), new Color(1f, 0.4f, 0.4f), false);
+	}
+
+	private void CrearUnArco(string nombre, Vector3 pos, Color color, bool norte)
+	{
+		var area = new Area3D();
+		area.Name = nombre;
+
+		var col = new CollisionShape3D();
+		col.Shape = new BoxShape3D { Size = ArcoTam };
+		area.AddChild(col);
+
+		var mesh = new MeshInstance3D();
+		mesh.Mesh = new BoxMesh { Size = ArcoTam };
+		var mat = new StandardMaterial3D();
+		mat.AlbedoColor = new Color(color.R, color.G, color.B, 0.22f);
+		mat.Transparency = BaseMaterial3D.TransparencyEnum.Alpha;
+		mat.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
+		mesh.MaterialOverride = mat;
+		area.AddChild(mesh);
+
+		GetParent().AddChild(area);
+		area.GlobalPosition = pos;
+		area.BodyEntered += (Node3D cuerpo) => OnBolaEnArco(cuerpo, norte);
+	}
+
+	private void OnBolaEnArco(Node cuerpo, bool norte)
+	{
+		if (_enRed && !Multiplayer.IsServer()) return;   // el servidor decide los goles
+		if (cuerpo is not BolaGolpe) return;              // solo la pelota anota
+		RegistrarGol(norte);                              // norte = anota Azul
+	}
+
+	private void RegistrarGol(bool azulAnota)
+	{
+		if (azulAnota) _golesAzul++; else _golesRojo++;
+		if (_enRed) Rpc(MethodName.MarcadorGol, _golesAzul, _golesRojo, azulAnota);
+		else MarcadorGol(_golesAzul, _golesRojo, azulAnota);
+		ResetBolaServidor();
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true)]
+	private void MarcadorGol(int azul, int rojo, bool azulAnoto)
+	{
+		_golesAzul = azul;
+		_golesRojo = rojo;
+		ActualizarMarcadorGoles();
+		Mensaje(azulAnoto ? "¡GOL AZUL!" : "¡GOL ROJO!",
+			azulAnoto ? new Color(0.45f, 0.6f, 1f) : new Color(1f, 0.45f, 0.45f));
+	}
+
+	private void ResetBolaServidor()
+	{
+		if (_bola == null || !IsInstanceValid(_bola)) return;
+		_bola.GlobalPosition = BolaInicio;
+		if (_bola is RigidBody3D rb)
+		{
+			rb.LinearVelocity = Vector3.Zero;
+			rb.AngularVelocity = Vector3.Zero;
+		}
+	}
+
+	private void ActualizarMarcadorGoles()
+	{
+		if (_lblGoles == null) return;
+		string mvp = CalcularMVP();
+		_lblGoles.Text = $"AZUL  {_golesAzul} : {_golesRojo}  ROJO"
+			+ (mvp != "" ? $"\nMVP: {mvp}" : "");
+	}
+
+	private string CalcularMVP()
+	{
+		int mejorId = 0, mejor = -1;
+		foreach (var kv in _destrucciones)
+			if (kv.Value > mejor) { mejor = kv.Value; mejorId = kv.Key; }
+		if (mejor <= 0) return "";
+		return $"Jugador {mejorId} ({mejor} pts)";
+	}
+
+	// Lo llama el carro cuando alguien es destruido (corre en todos los jugadores).
+	public void AvisarDemolicion(int idAtacante, int idVictima)
+	{
+		if (!_destrucciones.ContainsKey(idAtacante)) _destrucciones[idAtacante] = 0;
+		_destrucciones[idAtacante]++;
+
+		int yo = _enRed ? Multiplayer.GetUniqueId() : 1;
+
+		if (_lblMarcador != null)
+		{
+			int mios = _destrucciones.ContainsKey(yo) ? _destrucciones[yo] : 0;
+			_lblMarcador.Text = $"Destrucciones: {mios}";
+		}
+
+		ActualizarMarcadorGoles();   // refresca el MVP
+
+		if (idVictima == yo)
+		{
+			Mensaje("¡TE DESTRUYERON!", new Color(1f, 0.35f, 0.35f));
+			_cam?.Sacudir(0.4f);
+		}
+		else if (idAtacante == yo)
+		{
+			Mensaje("¡DESTRUISTE UN CARRO!", new Color(0.45f, 1f, 0.55f));
+			_cam?.Sacudir(0.25f);
+		}
+		else
+		{
+			_cam?.Sacudir(0.1f);
+		}
+	}
+
+	private void Mensaje(string txt, Color color)
+	{
+		if (_lblMensaje == null) return;
+		_lblMensaje.Text = txt;
+		color.A = 1f;
+		_lblMensaje.Modulate = color;
+		_tMensaje = 1.6;
 	}
 
 	public void PasarCheckpoint(int indice, Node3D cuerpo)
